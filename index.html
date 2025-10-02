@@ -1,122 +1,323 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Booster Pack Opening</title>
-  <style>
-    body {
-      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      height: 100vh;
-      margin: 0;
-      font-family: sans-serif;
-      overflow: hidden;
-    }
-
-    .pack {
-      width: 220px;
-      height: 320px;
-      background: url('https://i.imgur.com/OdL0XPt.png') center/cover no-repeat;
-      border-radius: 20px;
-      box-shadow: 0 0 30px rgba(255,255,255,0.2);
-      cursor: pointer;
-      transition: transform 0.6s ease, opacity 0.6s ease;
-      z-index: 5;
-    }
-
-    .pack:active {
-      transform: scale(0.95);
-    }
-
-    .cards {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 20px;
-      max-width: 800px;
-      display: none; /* hidden until pack is opened */
-    }
-
-    .card {
-      width: 120px;
-      height: 180px;
-      perspective: 1000px;
-      position: relative;
-    }
-
-    .front, .back {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      border-radius: 12px;
-      backface-visibility: hidden;
-      transition: transform 0.6s;
-    }
-
-    .front {
-      background: #222;
-    }
-
-    .back {
-      background: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-      font-size: 20px;
-      transform: rotateY(180deg);
-      box-shadow: 0 0 15px rgba(255,255,255,0.2);
-    }
-
-    .card.flipped .front {
-      transform: rotateY(180deg);
-    }
-
-    .card.flipped .back {
-      transform: rotateY(360deg);
-    }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Pack Simulator • Collection • Pokedex</title>
+<style>
+  :root{--bg:#071022;--card-w:160px;--card-h:220px}
+  *{box-sizing:border-box;font-family:Inter,Segoe UI,Arial,sans-serif}
+  body{margin:0;background:linear-gradient(180deg,#031025,#071a2d);color:#e6f0f6;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:18px}
+  header{width:100%;max-width:1100px;display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:18px}
+  h1{margin:0;font-size:18px}
+  .tabs{display:flex;gap:8px}
+  .tab{background:rgba(255,255,255,0.04);padding:8px 12px;border-radius:8px;cursor:pointer}
+  .tab.active{background:linear-gradient(90deg,#2b8bd6,#7b4ff3);color:white}
+  main{width:100%;max-width:1100px;flex:1;display:flex;gap:20px}
+  /* Left pane = interactive area */
+  .left{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px;min-height:560px}
+  .scene{position:relative; width:100%; max-width:820px; height:560px; display:flex;align-items:center;justify-content:center}
+  .pack{width:260px;height:380px;border-radius:20px; background:#2b3b50 url('https://i.imgur.com/OdL0XPt.png') center/cover no-repeat; box-shadow: 0 30px 60px rgba(2,6,23,0.6); cursor:pointer; display:flex;align-items:center;justify-content:center; color:white; font-weight:700; font-size:18px; transition:transform .6s,opacity .6s}
+  .pack.opening{transform:scale(1.25) rotateX(-68deg); opacity:0}
+  .cards-grid{position:absolute; inset:40px; display:grid; grid-template-columns:repeat(5,1fr); gap:18px; align-content:center; justify-items:center; pointer-events:auto; opacity:0; transition:opacity .6s}
+  .cards-grid.show{opacity:1}
+  .card{width:var(--card-w); height:var(--card-h); perspective:1000px; opacity:0; transform:translateY(24px); transition:opacity .4s, transform .5s}
+  .card.visible{opacity:1; transform:translateY(0)}
+  .card-inner{width:100%;height:100%;position:relative; transform-style:preserve-3d; transition:transform .8s cubic-bezier(.2,.9,.2,1)}
+  .card.revealed .card-inner{transform:rotateY(180deg)}
+  .card-face{position:absolute;inset:0;border-radius:12px; backface-visibility:hidden; overflow:hidden; display:flex;align-items:center;justify-content:center}
+  .card-back{background:linear-gradient(135deg,#0f1724,#1f2a38); color:#cbd5e1}
+  .card-front{background:#fff;color:#000; transform:rotateY(180deg); flex-direction:column;padding:8px; text-align:center}
+  .holo::before{content:"";position:absolute;inset:0;border-radius:12px; background:linear-gradient(120deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.2) 40%, rgba(255,255,255,0.04) 80%); mix-blend-mode:screen; animation:holoMove 3s linear infinite}
+  @keyframes holoMove{from{transform:translateX(-150%) skewX(-10deg)}to{transform:translateX(150%) skewX(-10deg)}}
+  .rare::after{content:"";position:absolute;inset:0;border-radius:12px; box-shadow:0 0 28px 8px rgba(255,215,80,0.24) inset}
+  .controls{display:flex;gap:8px;margin-top:12px}
+  .btn{background:linear-gradient(90deg,#3aa1ff,#8b5cf6);padding:10px 14px;border-radius:10px;cursor:pointer;border:none;color:white;font-weight:700}
+  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06)}
+  /* Right pane = Pokedex + Collection */
+  .right{width:360px;display:flex;flex-direction:column;gap:12px}
+  .panel{background:rgba(255,255,255,0.03);padding:12px;border-radius:10px; max-height:520px; overflow:auto}
+  .search{display:flex;gap:8px}
+  input[type="text"]{flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:white}
+  .card-row{display:flex;gap:10px;align-items:center;padding:8px;border-bottom:1px solid rgba(255,255,255,0.02)}
+  .card-row img{width:56px;height:80px;object-fit:cover;border-radius:6px}
+  small{color:#9fb1c3}
+  footer{margin-top:12px;color:#8ea6b8;font-size:13px}
+  @media (max-width:980px){main{flex-direction:column}.right{width:100%}}
+</style>
 </head>
 <body>
-  <div class="pack" onclick="openPack()"></div>
-  <div class="cards">
-    <div class="card"><div class="front"></div><div class="back">Card 1</div></div>
-    <div class="card"><div class="front"></div><div class="back">Card 2</div></div>
-    <div class="card"><div class="front"></div><div class="back">Card 3</div></div>
-    <div class="card"><div class="front"></div><div class="back">Card 4</div></div>
-    <div class="card"><div class="front"></div><div class="back">Card 5</div></div>
-    <div class="card"><div class="front"></div><div class="back">Card 6</div></div>
-    <div class="card"><div class="front"></div><div class="back">Card 7</div></div>
-    <div class="card"><div class="front"></div><div class="back">Card 8</div></div>
-    <div class="card"><div class="front"></div><div class="back">Card 9</div></div>
-    <div class="card"><div class="front"></div><div class="back">Card 10</div></div>
+<header>
+  <h1>PackSimulator • My Collection • Pokedex</h1>
+  <div class="tabs">
+    <div class="tab active" data-tab="open">Open Packs</div>
+    <div class="tab" data-tab="collection">My Collection</div>
+    <div class="tab" data-tab="pokedex">Pokedex</div>
   </div>
+</header>
 
-  <script>
-    function openPack() {
-      const pack = document.querySelector(".pack");
-      const cardsContainer = document.querySelector(".cards");
-      const cards = document.querySelectorAll(".card");
+<main>
+  <section class="left">
+    <div class="scene" aria-hidden="false">
+      <div id="pack" class="pack" title="Click to open pack">Click to Open</div>
+      <div id="cardsGrid" class="cards-grid"></div>
+    </div>
 
-      // hide pack
-      pack.style.opacity = "0";
-      setTimeout(() => {
-        pack.style.display = "none";
-        cardsContainer.style.display = "flex";
+    <div class="controls">
+      <button id="buyBtn" class="btn">Buy Pack (simulate)</button>
+      <button id="simulateBtn" class="btn ghost">Simulate 1 pack (dev)</button>
+      <div style="flex:1"></div>
+      <small id="status">Ready</small>
+    </div>
+  </section>
 
-        let delay = 0;
-        cards.forEach((card, i) => {
-          setTimeout(() => {
-            card.classList.add("flipped");
-          }, delay);
-          delay += 700; // 0.7s per card reveal
-        });
-      }, 600); // wait for fade out
+  <aside class="right">
+    <div class="panel" id="collectionPanel">
+      <h3>My Collection</h3>
+      <div id="collectionList"><small>No cards added yet — open a pack.</small></div>
+    </div>
+
+    <div class="panel" id="pokedexPanel">
+      <h3>Pokedex / Card Search</h3>
+      <div class="search">
+        <input id="searchInput" placeholder="Search card name (e.g. Pikachu)" />
+        <button id="searchBtn" class="btn">Search</button>
+      </div>
+      <div id="searchResults" style="margin-top:8px"></div>
+    </div>
+  </aside>
+</main>
+
+<footer>
+  Tip: API usage from the Pokémon TCG API — you can register for an API key to raise rate limits. (Docs linked in comments.) :contentReference[oaicite:3]{index=3}
+</footer>
+
+<script>
+/*
+Prototype behavior:
+- Uses Pokemon TCG API (v2) to fetch a pool of cards and simulate a 10-card booster.
+- When pack opens cards are shown and auto-revealed one-by-one.
+- Revealed cards can be added to localCollection (localStorage).
+- Pokedex tab: search card by name (API) and show results.
+IMPORTANT: For heavier use, register for an API key at docs.pokemontcg.io and set API_KEY.
+*/
+
+const API_BASE = 'https://api.pokemontcg.io/v2';
+const API_KEY = ''; // OPTIONAL: put your API key here for higher rate limits (don't push keys to public repos)
+const HEADERS = API_KEY ? { 'X-Api-Key': API_KEY } : {};
+
+const tabs = document.querySelectorAll('.tab');
+const packEl = document.getElementById('pack');
+const cardsGrid = document.getElementById('cardsGrid');
+const statusEl = document.getElementById('status');
+const buyBtn = document.getElementById('buyBtn');
+const simulateBtn = document.getElementById('simulateBtn');
+
+let localCollection = JSON.parse(localStorage.getItem('myCollection_v1')||'[]');
+
+function setStatus(s){ statusEl.textContent = s; }
+function saveCollection(){ localStorage.setItem('myCollection_v1', JSON.stringify(localCollection)); renderCollection(); }
+
+// render collection list
+function renderCollection(){
+  const out = document.getElementById('collectionList');
+  if(!localCollection.length){ out.innerHTML = '<small>No cards added yet — open a pack.</small>'; return; }
+  out.innerHTML = '';
+  localCollection.forEach(card=>{
+    const row = document.createElement('div');
+    row.className = 'card-row';
+    row.innerHTML = /*html*/`
+      <img src="${card.images?.small || card.image}" alt="${escapeHtml(card.name)}" />
+      <div style="flex:1">
+        <div style="font-weight:700">${escapeHtml(card.name)}</div>
+        <small>${escapeHtml(card.set?.name || '')} • ${escapeHtml(card.rarity||'')}</small>
+      </div>
+      <button class="btn ghost" data-id="${card.id}">Remove</button>
+    `;
+    row.querySelector('button').addEventListener('click', ()=>{
+      localCollection = localCollection.filter(c=>c.id !== card.id);
+      saveCollection();
+    });
+    out.appendChild(row);
+  });
+}
+
+// small helper
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+
+// fetch a large page of cards (we'll sample randomly)
+async function fetchCardPool(pageSize=250){
+  setStatus('Fetching card pool...');
+  try{
+    // we ask for many cards (this endpoint supports pageSize up to 250)
+    const res = await fetch(`${API_BASE}/cards?pageSize=${pageSize}`, { headers: HEADERS });
+    const j = await res.json();
+    setStatus('Card pool loaded');
+    return j.data || [];
+  }catch(err){
+    console.error(err);
+    setStatus('Failed to load cards');
+    return [];
+  }
+}
+
+function sample(cards, n=10){
+  const out = [];
+  const copy = cards.slice();
+  for(let i=0;i<n && copy.length;i++){
+    const idx = Math.floor(Math.random()*copy.length);
+    out.push(copy.splice(idx,1)[0]);
+  }
+  return out;
+}
+
+function clearGrid(){
+  cardsGrid.innerHTML = '';
+  cardsGrid.classList.remove('show');
+}
+
+function createCardElement(card){
+  const el = document.createElement('div');
+  el.className = 'card';
+  el.dataset.id = card.id;
+  el.innerHTML = `<div class="card-inner">
+    <div class="card-face card-back">?</div>
+    <div class="card-face card-front ${(card.rarity||'').toLowerCase().includes('holo') ? 'holo' : ''} ${(card.rarity||'').toLowerCase().includes('rare') ? 'rare' : ''}">
+      <div style="font-weight:700">${escapeHtml(card.name)}</div>
+      <div style="font-size:12px;margin-top:6px">${escapeHtml(card.set?.name || (card.set?.id||''))}</div>
+      <img src="${card.images?.small || card.image}" alt="${escapeHtml(card.name)}" style="width:100%;height:auto;margin-top:8px;border-radius:6px" />
+      <div style="margin-top:8px"><button class="btn" data-action="add">Add to Collection</button></div>
+    </div>
+  </div>`;
+  // add button listener for add
+  el.addEventListener('click', ()=>{ /* clicking won't flip: reveal is automatic */ });
+  return el;
+}
+
+async function openPackAutoReveal(){
+  // fade + open animation
+  packEl.classList.add('opening');
+  setStatus('Opening pack...');
+  // after pack animation, fetch sample and show
+  setTimeout(async ()=>{
+    packEl.style.display = 'none';
+    // get pool then sample 10
+    const pool = await fetchCardPool(250);
+    const cards = sample(pool, 10);
+    clearGrid();
+    cards.forEach(c=>{
+      const ce = createCardElement(c);
+      cardsGrid.appendChild(ce);
+    });
+    // show grid
+    cardsGrid.classList.add('show');
+    // sequential reveal
+    const cardEls = Array.from(cardsGrid.querySelectorAll('.card'));
+    setStatus('Revealing cards...');
+    for(let i=0;i<cardEls.length;i++){
+      const el = cardEls[i];
+      // make visible (entry animation)
+      setTimeout(()=> el.classList.add('visible'), i*120);
     }
-  </script>
+    // then flip one-by-one and show add button
+    for(let i=0;i<cardEls.length;i++){
+      await new Promise(r => setTimeout(r, 600)); // wait between reveals
+      const el = cardEls[i];
+      el.classList.add('revealed');
+      // enable Add button
+      const addBtn = el.querySelector('[data-action="add"]');
+      addBtn.addEventListener('click', ()=>{
+        // find card data in DOM (we stored id)
+        const id = el.dataset.id;
+        // original card objects aren't attached — re-fetch the card details by id to store full info
+        addBtn.disabled = true; addBtn.textContent = 'Adding...';
+        fetch(`${API_BASE}/cards/${id}`, { headers: HEADERS })
+          .then(r=>r.json())
+          .then(data=>{
+            const cardObj = data.data;
+            // push card if not already present
+            if(!localCollection.some(c=>c.id===cardObj.id)){
+              localCollection.push(cardObj);
+              saveCollection();
+            }
+            addBtn.textContent = 'Added';
+          }).catch(e=>{
+            addBtn.disabled = false;
+            addBtn.textContent = 'Add to Collection';
+            console.error(e);
+          });
+      });
+    }
+    setStatus('Pack opened');
+  }, 650);
+}
+
+// TAB logic: switching visible panels
+tabs.forEach(t=>{
+  t.addEventListener('click', ()=> {
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    const tab = t.dataset.tab;
+    if(tab==='open'){ document.querySelector('.left').style.display='flex'; document.querySelector('.right').style.display='flex'; }
+    if(tab==='collection'){ document.querySelector('.left').style.display='none'; document.querySelector('.right').style.display='flex'; }
+    if(tab==='pokedex'){ document.querySelector('.left').style.display='none'; document.querySelector('.right').style.display='flex'; }
+    // show appropriate panel in right side (we'll just keep both collection + pokedex visible for simplicity)
+  });
+});
+
+// initial render
+renderCollection();
+
+// pack click / buy button
+packEl.addEventListener('click', openPackAutoReveal);
+buyBtn.addEventListener('click', () => {
+  // simulate purchase then open
+  setStatus('Purchasing pack...');
+  setTimeout(()=> openPackAutoReveal(), 400);
+});
+simulateBtn.addEventListener('click', () => {
+  // developer quick simulate: open immediately with static sample
+  openPackAutoReveal();
+});
+
+// ------- Pokedex search -------
+const searchBtn = document.getElementById('searchBtn');
+const searchInput = document.getElementById('searchInput');
+const searchResults = document.getElementById('searchResults');
+
+searchBtn.addEventListener('click', async ()=>{
+  const q = searchInput.value.trim();
+  if(!q) return;
+  searchResults.innerHTML = 'Searching...';
+  try{
+    const res = await fetch(`${API_BASE}/cards?q=name:${encodeURIComponent(q)}&pageSize=20`, { headers: HEADERS });
+    const j = await res.json();
+    const list = j.data || [];
+    if(!list.length){ searchResults.innerHTML = '<small>No results</small>'; return; }
+    searchResults.innerHTML = '';
+    list.forEach(card=>{
+      const r = document.createElement('div');
+      r.className = 'card-row';
+      r.innerHTML = `<img src="${card.images?.small||''}" alt="${escapeHtml(card.name)}" />
+        <div style="flex:1">
+          <div style="font-weight:700">${escapeHtml(card.name)}</div>
+          <small>${escapeHtml(card.set?.name || '')} • ${escapeHtml(card.rarity || '')}</small>
+        </div>
+        <button class="btn" data-id="${card.id}">Add</button>`;
+      r.querySelector('button').addEventListener('click', ()=>{
+        if(!localCollection.some(c=>c.id===card.id)){ localCollection.push(card); saveCollection(); }
+      });
+      searchResults.appendChild(r);
+    });
+  }catch(e){
+    console.error(e);
+    searchResults.innerHTML = '<small>Error searching</small>';
+  }
+});
+
+// accessibility: press enter to search
+searchInput.addEventListener('keydown', e=>{ if(e.key==='Enter') searchBtn.click(); });
+
+</script>
 </body>
 </html>
