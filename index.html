@@ -1,197 +1,122 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Booster Pack Unboxing</title>
+  <meta charset="UTF-8">
+  <title>Booster Pack Opening</title>
   <style>
-    * { box-sizing: border-box; }
     body {
-      margin: 0;
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
       height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: radial-gradient(circle at center, #222 0%, #000 100%);
+      margin: 0;
+      font-family: sans-serif;
       overflow: hidden;
-      font-family: Arial, sans-serif;
-    }
-
-    .scene {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
     }
 
     .pack {
       width: 220px;
       height: 320px;
-      background: url('pack-art.png') center/cover no-repeat;
-      background-color: #444; /* fallback color if image not loaded */
+      background: url('https://i.imgur.com/OdL0XPt.png') center/cover no-repeat;
       border-radius: 20px;
       box-shadow: 0 0 30px rgba(255,255,255,0.2);
       cursor: pointer;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 1.4rem;
-      color: white;
-      text-align: center;
       transition: transform 0.6s ease, opacity 0.6s ease;
       z-index: 5;
     }
-    .pack.opening {
-      transform: scale(1.3) rotateX(-75deg);
-      opacity: 0;
+
+    .pack:active {
+      transform: scale(0.95);
     }
 
-    .cards-container {
-      display: grid;
-      grid-template-columns: repeat(5, 160px);
-      grid-gap: 20px;
+    .cards {
+      display: flex;
       justify-content: center;
-      align-items: center;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: auto;
-      max-width: 1000px;
-      opacity: 0;
-    }
-    .cards-container.show {
-      opacity: 1;
-      transition: opacity 1s ease;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 20px;
+      max-width: 800px;
+      display: none; /* hidden until pack is opened */
     }
 
     .card {
-      width: 160px;
-      height: 220px;
+      width: 120px;
+      height: 180px;
       perspective: 1000px;
-      cursor: pointer;
-    }
-    .card-inner {
       position: relative;
-      width: 100%;
-      height: 100%;
-      transform-style: preserve-3d;
-      transition: transform 0.8s;
-    }
-    .card.flipped .card-inner {
-      transform: rotateY(180deg);
     }
 
-    .card-front, .card-back {
+    .front, .back {
       position: absolute;
       width: 100%;
       height: 100%;
+      border-radius: 12px;
       backface-visibility: hidden;
-      border-radius: 14px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 1rem;
-      font-weight: bold;
+      transition: transform 0.6s;
     }
-    .card-back {
-      background: linear-gradient(135deg, #111, #444);
-      color: white;
+
+    .front {
+      background: #222;
     }
-    .card-front {
+
+    .back {
       background: white;
-      color: black;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 20px;
       transform: rotateY(180deg);
-      position: relative;
+      box-shadow: 0 0 15px rgba(255,255,255,0.2);
     }
 
-    .holo::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border-radius: 14px;
-      background: linear-gradient(120deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.4) 40%, rgba(255,255,255,0.05) 80%);
-      mix-blend-mode: screen;
-      animation: holoMove 3s linear infinite;
-    }
-    @keyframes holoMove {
-      from { transform: translateX(-150%) skewX(-10deg); }
-      to { transform: translateX(150%) skewX(-10deg); }
+    .card.flipped .front {
+      transform: rotateY(180deg);
     }
 
-    .rare::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border-radius: 14px;
-      box-shadow: 0 0 30px 8px rgba(255,215,80,0.4) inset;
+    .card.flipped .back {
+      transform: rotateY(360deg);
     }
   </style>
 </head>
 <body>
-  <div class="scene">
-    <div class="pack" id="pack">Click to<br>Open Pack</div>
-    <div class="cards-container" id="cardsContainer"></div>
+  <div class="pack" onclick="openPack()"></div>
+  <div class="cards">
+    <div class="card"><div class="front"></div><div class="back">Card 1</div></div>
+    <div class="card"><div class="front"></div><div class="back">Card 2</div></div>
+    <div class="card"><div class="front"></div><div class="back">Card 3</div></div>
+    <div class="card"><div class="front"></div><div class="back">Card 4</div></div>
+    <div class="card"><div class="front"></div><div class="back">Card 5</div></div>
+    <div class="card"><div class="front"></div><div class="back">Card 6</div></div>
+    <div class="card"><div class="front"></div><div class="back">Card 7</div></div>
+    <div class="card"><div class="front"></div><div class="back">Card 8</div></div>
+    <div class="card"><div class="front"></div><div class="back">Card 9</div></div>
+    <div class="card"><div class="front"></div><div class="back">Card 10</div></div>
   </div>
 
   <script>
-    const packEl = document.getElementById("pack");
-    const cardsContainer = document.getElementById("cardsContainer");
+    function openPack() {
+      const pack = document.querySelector(".pack");
+      const cardsContainer = document.querySelector(".cards");
+      const cards = document.querySelectorAll(".card");
 
-    const rarities = [
-      { key: "Common", chance: 0.7 },
-      { key: "Uncommon", chance: 0.2 },
-      { key: "Rare", chance: 0.085 },
-      { key: "Holo", chance: 0.015 },
-    ];
-
-    function pickRarity() {
-      const r = Math.random();
-      let sum = 0;
-      for (const rr of rarities) {
-        sum += rr.chance;
-        if (r <= sum) return rr.key;
-      }
-      return "Common";
-    }
-
-    function makeCards(count = 10) {
-      return Array.from({ length: count }, (_, i) => ({
-        id: i + 1,
-        rarity: pickRarity(),
-      }));
-    }
-
-    function showCards(cards) {
-      cardsContainer.innerHTML = "";
-      cards.forEach((card, i) => {
-        const cardDiv = document.createElement("div");
-        cardDiv.className = "card";
-        cardDiv.innerHTML = `
-          <div class="card-inner">
-            <div class="card-back">?</div>
-            <div class="card-front ${card.rarity === "Holo" ? "holo" : ""} ${card.rarity === "Rare" ? "rare" : ""}">
-              <div>Card ${card.id}</div>
-              <div>${card.rarity}</div>
-            </div>
-          </div>
-        `;
-        cardDiv.addEventListener("click", () => {
-          cardDiv.classList.toggle("flipped");
-        });
-        cardsContainer.appendChild(cardDiv);
-      });
-      cardsContainer.classList.add("show");
-    }
-
-    packEl.addEventListener("click", () => {
-      packEl.classList.add("opening");
+      // hide pack
+      pack.style.opacity = "0";
       setTimeout(() => {
-        const cards = makeCards(10);
-        showCards(cards);
-      }, 800);
-    });
+        pack.style.display = "none";
+        cardsContainer.style.display = "flex";
+
+        let delay = 0;
+        cards.forEach((card, i) => {
+          setTimeout(() => {
+            card.classList.add("flipped");
+          }, delay);
+          delay += 700; // 0.7s per card reveal
+        });
+      }, 600); // wait for fade out
+    }
   </script>
 </body>
 </html>
