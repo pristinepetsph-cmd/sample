@@ -25,11 +25,11 @@
       align-items: center;
     }
 
-    /* Pack styling */
     .pack {
       width: 220px;
       height: 320px;
-      background: linear-gradient(180deg, #555, #222);
+      background: url('pack-art.png') center/cover no-repeat;
+      background-color: #444; /* fallback color if image not loaded */
       border-radius: 20px;
       box-shadow: 0 0 30px rgba(255,255,255,0.2);
       cursor: pointer;
@@ -47,7 +47,6 @@
       opacity: 0;
     }
 
-    /* Cards container */
     .cards-container {
       display: grid;
       grid-template-columns: repeat(5, 160px);
@@ -67,7 +66,6 @@
       transition: opacity 1s ease;
     }
 
-    /* Card base */
     .card {
       width: 160px;
       height: 220px;
@@ -85,7 +83,6 @@
       transform: rotateY(180deg);
     }
 
-    /* Faces */
     .card-front, .card-back {
       position: absolute;
       width: 100%;
@@ -109,7 +106,6 @@
       position: relative;
     }
 
-    /* Effects */
     .holo::before {
       content: "";
       position: absolute;
