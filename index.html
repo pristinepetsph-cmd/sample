@@ -21,6 +21,7 @@
       padding: 20px;
       border-radius: 16px;
       box-shadow: 0 0 30px rgba(0,0,0,0.5);
+      text-align: center;
     }
     button {
       padding: 8px 16px;
@@ -32,20 +33,21 @@
     .buy-btn {
       background: #10b981;
       color: white;
+      margin-bottom: 20px;
     }
     .buy-btn:disabled {
       opacity: 0.5;
       cursor: not-allowed;
     }
     .pack {
-      width: 120px;
-      height: 180px;
+      width: 140px;
+      height: 200px;
       border-radius: 12px;
       background: linear-gradient(180deg, #0f172a, #1e293b);
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 20px 0;
+      margin: 20px auto;
       cursor: pointer;
       transition: transform 0.3s;
     }
@@ -56,12 +58,14 @@
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
       gap: 12px;
+      margin-top: 20px;
     }
     .card {
       position: relative;
       width: 100%;
       height: 200px;
       perspective: 1000px;
+      cursor: pointer;
     }
     .card-inner {
       position: absolute;
@@ -70,7 +74,7 @@
       transform-style: preserve-3d;
       transition: transform 0.6s;
     }
-    .card.revealed .card-inner {
+    .card.flipped .card-inner {
       transform: rotateY(180deg);
     }
     .card-front, .card-back {
@@ -94,6 +98,7 @@
       background: white;
       color: black;
       flex-direction: column;
+      position: relative;
     }
     .holo::before {
       content: "";
@@ -124,8 +129,8 @@
     <p>Credits: <span id="credits">100</span></p>
     <button class="buy-btn" onclick="buyPack()">Buy Pack (10 credits)</button>
 
-    <div class="pack" onclick="openPack()">
-      <div>Click to open pack</div>
+    <div class="pack" onclick="preparePack()">
+      <div>Click to prepare pack</div>
     </div>
 
     <div class="cards" id="cards"></div>
@@ -135,7 +140,6 @@
     let credits = 100;
     const packCost = 10;
     let cards = [];
-    let revealedCount = 0;
 
     const rarities = [
       { key: "Common", chance: 0.7 },
@@ -160,7 +164,7 @@
 
     function makeCard(id) {
       const rarity = pickRarity();
-      return { id, rarity, revealed: false };
+      return { id, rarity };
     }
 
     function buyPack() {
@@ -170,20 +174,12 @@
       }
       credits -= packCost;
       updateCredits();
-      cards = Array.from({ length: 5 }).map((_, i) => makeCard(i + 1));
-      revealedCount = 0;
-      renderCards();
+      preparePack();
     }
 
-    function openPack() {
-      if (!cards.length) return alert("Buy a pack first!");
-      cards.forEach((card, idx) => {
-        setTimeout(() => {
-          card.revealed = true;
-          revealedCount++;
-          renderCards();
-        }, idx * 800);
-      });
+    function preparePack() {
+      cards = Array.from({ length: 5 }).map((_, i) => makeCard(i + 1));
+      renderCards();
     }
 
     function renderCards() {
@@ -191,7 +187,7 @@
       container.innerHTML = "";
       cards.forEach((card) => {
         const div = document.createElement("div");
-        div.className = "card" + (card.revealed ? " revealed" : "");
+        div.className = "card";
         div.innerHTML = `
           <div class="card-inner">
             <div class="card-back">Mystery Card</div>
@@ -201,6 +197,9 @@
             </div>
           </div>
         `;
+        div.addEventListener("click", () => {
+          div.classList.toggle("flipped");
+        });
         container.appendChild(div);
       });
     }
