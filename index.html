@@ -1,646 +1,211 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Gacha Card Pack Demo</title>
-<style>
-  :root{
-    --panel-bg: rgba(13,13,20,0.6);
-    --glass: rgba(255,255,255,0.06);
-    --accent: #8be78b;
-    --soft: #f3f3f7;
-    --card-w: 220px;
-    --card-h: 320px;
-    --radius: 14px;
-  }
-  *{box-sizing:border-box;font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
-  body{
-    margin:0;
-    min-height:100vh;
-    background: linear-gradient(180deg,#ffb87a 0%, #f3a683 35%, #6a89cc 100%);
-    display:flex;
-    align-items:stretch;
-    color:var(--soft);
-  }
-
-  /* Sidebar */
-  .sidebar{
-    width:260px;
-    background:linear-gradient(180deg, rgba(0,0,0,0.45), rgba(0,0,0,0.25));
-    padding:26px;
-    display:flex;
-    flex-direction:column;
-    gap:18px;
-  }
-  .logo{font-weight:700;font-size:20px;letter-spacing:0.6px}
-  .balance{
-    margin-top:auto;
-    padding:12px;
-    background:var(--glass);
-    border-radius:10px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    color:#fff;
-  }
-
-  /* Main area */
-  .main{
-    flex:1;
-    padding:24px;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:18px;
-    position:relative;
-  }
-
-  .pack-area{
-    width:640px;
-    height:420px;
-    border-radius:18px;
-    background:linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
-    backdrop-filter: blur(8px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.25);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    position:relative;
-    overflow:hidden;
-  }
-
-  /* pack graphic */
-  .pack{
-    width:220px;
-    height:300px;
-    background:linear-gradient(180deg,#fff 0%, #eaeaea 100%);
-    border-radius:14px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-weight:700;
-    color:#333;
-    transform-origin:center;
-    box-shadow: 0 12px 30px rgba(0,0,0,0.4);
-    position:relative;
-    cursor:pointer;
-  }
-  .pack::after{
-    content:"PACK";
-    position:absolute;
-    top:14px;
-    left:14px;
-    font-size:14px;
-    font-weight:800;
-    letter-spacing:2px;
-    color:#fff;
-    background:linear-gradient(90deg,#ff6b6b,#ffee66);
-    padding:6px 10px;
-    border-radius:8px;
-  }
-
-  .controls{
-    display:flex;
-    gap:12px;
-    margin-top:12px;
-    align-items:center;
-  }
-  button{
-    font-size:15px;
-    padding:10px 16px;
-    border-radius:10px;
-    border:0;
-    cursor:pointer;
-    background:#222;
-    color:white;
-    box-shadow: inset 0 -3px 0 rgba(0,0,0,0.25);
-  }
-  button.primary{ background: linear-gradient(90deg,#5ee7df,#b490ca); color:#111; font-weight:700; }
-  .note{font-size:13px;color:rgba(255,255,255,0.8)}
-
-  /* reveal row */
-  .reveal-row{
-    display:flex;
-    gap:16px;
-    margin-top:18px;
-    align-items:center;
-  }
-
-  /* card component */
-  .card{
-    width:var(--card-w);
-    height:var(--card-h);
-    border-radius:12px;
-    box-shadow: 0 8px 18px rgba(0,0,0,0.35);
-    display:flex;
-    flex-direction:column;
-    align-items:stretch;
-    overflow:hidden;
-    transform:scale(.96);
-    transition: transform .28s cubic-bezier(.2,.9,.3,1), box-shadow .2s;
-    position:relative;
-    background:#111;
-    border: 2px solid rgba(255,255,255,0.04);
-  }
-  .card:hover{ transform:scale(1); box-shadow: 0 18px 40px rgba(0,0,0,0.5); }
-  .card .art{
-    flex:1;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:22px;
-    font-weight:800;
-    color:rgba(255,255,255,0.95);
-    text-shadow: 0 2px 6px rgba(0,0,0,0.35);
-    position:relative;
-  }
-  .card .meta{
-    padding:10px;
-    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.06));
-    font-size:13px;
-  }
-  .rarity-badge{
-    position:absolute;
-    top:10px;
-    right:10px;
-    padding:6px 8px;
-    border-radius:999px;
-    font-weight:700;
-    color:#081;
-    background:rgba(0,0,0,0.08);
-    font-size:12px;
-    backdrop-filter: blur(4px);
-  }
-
-  /* rarity effects */
-  .rarity-common { --r: 200 200 200; }
-  .rarity-rare { --r: 92 167 255; }
-  .rarity-epic { --r: 190 120 255; }
-  .rarity-legendary { --r: 255 200 80; }
-
-  .card .art{
-    background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(0,0,0,0.05));
-  }
-
-  /* glints */
-  .glint{
-    position:absolute;
-    width:60%;
-    height:140%;
-    background:linear-gradient(120deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.03) 40%, rgba(255,255,255,0.0) 60%);
-    transform:rotate(20deg) translateX(-120%);
-    top:-20%;
-    left:0;
-    pointer-events:none;
-    mix-blend-mode:screen;
-    animation: glint 2.2s linear;
-  }
-  @keyframes glint{
-    to{ transform: rotate(20deg) translateX(120%); }
-  }
-
-  /* popup modal */
-  .modal{
-    position:fixed;
-    inset:0;
-    display:none;
-    align-items:center;
-    justify-content:center;
-    background:rgba(0,0,0,0.5);
-    z-index:40;
-  }
-  .modal.open{ display:flex; }
-  .modal-card{
-    width:520px;
-    border-radius:12px;
-    overflow:hidden;
-    background:linear-gradient(180deg,#0b0b0e,#111217);
-    padding:18px;
-    box-shadow: 0 30px 60px rgba(0,0,0,0.6);
-    color:var(--soft);
-  }
-  .modal-card h2{ margin:0 0 8px 0; }
-  .collection{
-    margin-top:12px;
-    display:flex;
-    gap:8px;
-    flex-wrap:wrap;
-    max-height:220px;
-    overflow:auto;
-    padding-right:6px;
-  }
-  .small-card{ width:96px; height:132px; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#111; font-weight:700; font-size:12px; box-shadow: 0 6px 12px rgba(0,0,0,0.35); }
-  footer{ position:absolute; bottom:18px; right:18px; font-size:13px; color:rgba(255,255,255,0.8); }
-
-  /* responsive */
-  @media (max-width:920px){
-    .pack-area{ width:92%; height:380px; }
-    .reveal-row{ flex-wrap:wrap; justify-content:center;}
-  }
-</style>
+  <meta charset="UTF-8">
+  <title>Interactive Booster Pack</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #111827, #1f2937);
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 900px;
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 0 30px rgba(0,0,0,0.5);
+    }
+    button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .buy-btn {
+      background: #10b981;
+      color: white;
+    }
+    .buy-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .pack {
+      width: 120px;
+      height: 180px;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #0f172a, #1e293b);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 20px 0;
+      cursor: pointer;
+      transition: transform 0.3s;
+    }
+    .pack:hover {
+      transform: translateY(-5px) scale(1.05);
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+    }
+    .card {
+      position: relative;
+      width: 100%;
+      height: 200px;
+      perspective: 1000px;
+    }
+    .card-inner {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0.6s;
+    }
+    .card.revealed .card-inner {
+      transform: rotateY(180deg);
+    }
+    .card-front, .card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      text-align: center;
+    }
+    .card-back {
+      background: linear-gradient(135deg, #3b82f6, #9333ea);
+      color: white;
+    }
+    .card-front {
+      transform: rotateY(180deg);
+      background: white;
+      color: black;
+      flex-direction: column;
+    }
+    .holo::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.3) 30%, rgba(255,255,255,0.05) 60%);
+      mix-blend-mode: screen;
+      transform: translateX(-150%);
+      animation: holoMove 3s linear infinite;
+      border-radius: 10px;
+    }
+    @keyframes holoMove {
+      from { transform: translateX(-150%) skewX(-10deg); }
+      to { transform: translateX(150%) skewX(-10deg); }
+    }
+    .rare::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 10px;
+      box-shadow: 0 0 20px 5px rgba(255,215,80,0.3) inset;
+    }
+  </style>
 </head>
 <body>
+  <div class="container">
+    <h1>Interactive Booster Pack</h1>
+    <p>Credits: <span id="credits">100</span></p>
+    <button class="buy-btn" onclick="buyPack()">Buy Pack (10 credits)</button>
 
-  <aside class="sidebar">
-    <div class="logo">CardVault</div>
-    <div class="note">Open packs, collect cards, and trade (demo)</div>
-
-    <div style="margin-top:8px;">
-      <strong>Shop</strong>
-      <div style="margin-top:8px;display:flex;gap:8px;flex-direction:column">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <span>Standard Pack</span>
-          <span style="font-weight:700">2 ⸱ coins</span>
-        </div>
-        <div style="display:flex;gap:8px;margin-top:6px">
-          <button id="buyPackBtn">Buy Pack</button>
-          <button id="buy5Btn">Buy ×5</button>
-        </div>
-      </div>
+    <div class="pack" onclick="openPack()">
+      <div>Click to open pack</div>
     </div>
 
-    <div style="margin-top:6px;">
-      <strong>Your collection</strong>
-      <div style="margin-top:8px;font-size:13px" id="collectionSummary">No cards yet</div>
-    </div>
-
-    <div style="flex:1"></div>
-
-    <div class="balance" title="Your balance">
-      <div>Balance</div>
-      <div><span id="balance">10</span> ⸱ coins</div>
-    </div>
-  </aside>
-
-  <main class="main">
-    <div class="pack-area">
-      <div id="pack" class="pack" title="Click to open pack">
-        <div style="text-align:center">
-          <div style="font-size:20px">Mystic Pack</div>
-          <div style="font-size:12px;margin-top:8px;color:#666">Contains 5 cards</div>
-        </div>
-      </div>
-
-      <!-- reveal row sits on top -->
-      <div id="revealContainer" style="position:absolute;left:50%;top:40%;transform:translate(-50%,-20%);display:flex;gap:16px;align-items:center;pointer-events:none;"></div>
-    </div>
-
-    <div class="controls">
-      <button id="openPackBtn" class="primary">Open Pack</button>
-      <button id="clearBtn">Reset Collection</button>
-      <div class="note" style="margin-left:8px">Cards: <span id="cardCount">0</span></div>
-    </div>
-
-    <div class="reveal-row" id="lastReveal"></div>
-
-    <footer>Demo • No copyrighted art • Replace templates in JS</footer>
-  </main>
-
-  <!-- modal -->
-  <div id="modal" class="modal" role="dialog" aria-hidden="true">
-    <div class="modal-card">
-      <h2 id="modalTitle">Card details</h2>
-      <div id="modalDesc">Description</div>
-      <div style="margin-top:12px">
-        <strong>Your collection</strong>
-        <div class="collection" id="collectionGrid"></div>
-      </div>
-      <div style="margin-top:12px;text-align:right">
-        <button id="closeModal">Close</button>
-      </div>
-    </div>
+    <div class="cards" id="cards"></div>
   </div>
 
-<script>
-/* -----------------------------
-   Config & Templates
-   ----------------------------- */
-const PACK_COST = 2;
-const CURRENCY_KEY = 'demo_balance_v1';
-const COLLECTION_KEY = 'demo_collection_v1';
+  <script>
+    let credits = 100;
+    const packCost = 10;
+    let cards = [];
+    let revealedCount = 0;
 
-const RARITIES = [
-  { key:'common', label:'Common', weight:70, css:'rarity-common', color:'#d5d5d5' },
-  { key:'rare', label:'Rare', weight:25, css:'rarity-rare', color:'#5aa6ff' },
-  { key:'epic', label:'Epic', weight:4, css:'rarity-epic', color:'#b77bff' },
-  { key:'legendary', label:'Legendary', weight:1, css:'rarity-legendary', color:'#ffd166' }
-];
+    const rarities = [
+      { key: "Common", chance: 0.7 },
+      { key: "Uncommon", chance: 0.2 },
+      { key: "Rare", chance: 0.085 },
+      { key: "Holo", chance: 0.015 }
+    ];
 
-/* Basic card templates (no images) — replace or expand these */
-const CARD_TEMPLATES = [
-  { id:'c001', name:'Venulia', description:'A forest guardian with vines.', base:'common' },
-  { id:'c002', name:'Bramblefox', description:'Swift and cunning.', base:'common' },
-  { id:'c003', name:'Glimmerfin', description:'Shimmers under moonlight.', base:'rare' },
-  { id:'c004', name:'Pyronaut', description:'Ignites the arena.', base:'rare' },
-  { id:'c005', name:'Aetherion', description:'Harnesses cosmic winds.', base:'epic' },
-  { id:'c006', name:'Titanclaw', description:'A colossal clawed beast.', base:'epic' },
-  { id:'c007', name:'Solrazor', description:'Legend told in suns.', base:'legendary' },
-];
+    function updateCredits() {
+      document.getElementById("credits").textContent = credits;
+    }
 
-/* utility: weighted random rarity */
-function pickRarity(){
-  const total = RARITIES.reduce((s,r)=>s+r.weight,0);
-  let r = Math.random()*total;
-  for (let i=0;i<RARITIES.length;i++){
-    r -= RARITIES[i].weight;
-    if (r <= 0) return RARITIES[i];
-  }
-  return RARITIES[RARITIES.length-1];
-}
-
-/* pick a card given rarity (prefer templates matching base rarity if available) */
-function pickCardByRarity(rarityKey){
-  const filtered = CARD_TEMPLATES.filter(t => t.base === rarityKey);
-  if (filtered.length === 0) {
-    // fallback to any
-    return CARD_TEMPLATES[Math.floor(Math.random()*CARD_TEMPLATES.length)];
-  }
-  return filtered[Math.floor(Math.random()*filtered.length)];
-}
-
-/* -----------------------------
-   State & Storage
-   ----------------------------- */
-let state = {
-  balance: Number(localStorage.getItem(CURRENCY_KEY) || 10),
-  collection: JSON.parse(localStorage.getItem(COLLECTION_KEY) || '{}'),
-  lastOpened: []
-};
-
-function saveState(){
-  localStorage.setItem(CURRENCY_KEY, state.balance);
-  localStorage.setItem(COLLECTION_KEY, JSON.stringify(state.collection));
-  renderUI();
-}
-
-/* -----------------------------
-   UI Helpers
-   ----------------------------- */
-const balanceEl = document.getElementById('balance');
-const collectionSummary = document.getElementById('collectionSummary');
-const cardCountEl = document.getElementById('cardCount');
-const revealContainer = document.getElementById('revealContainer');
-const lastReveal = document.getElementById('lastReveal');
-const modal = document.getElementById('modal');
-const modalTitle = document.getElementById('modalTitle');
-const modalDesc = document.getElementById('modalDesc');
-const collectionGrid = document.getElementById('collectionGrid');
-
-function renderUI(){
-  balanceEl.textContent = state.balance;
-  const totalCards = Object.values(state.collection).reduce((s,v)=>s+v,0);
-  cardCountEl.textContent = totalCards;
-  // summary
-  const parts=[];
-  for (const [id,qty] of Object.entries(state.collection)){
-    const tpl = CARD_TEMPLATES.find(t=>t.id===id);
-    if (tpl) parts.push(${tpl.name} ×${qty});
-  }
-  collectionSummary.textContent = parts.length? parts.join(' • ') : 'No cards yet';
-  // collection grid
-  collectionGrid.innerHTML = '';
-  for (const [id,qty] of Object.entries(state.collection)){
-    const tpl = CARD_TEMPLATES.find(t=>t.id===id);
-    if (!tpl) continue;
-    const div = document.createElement('div');
-    div.className = 'small-card';
-    div.style.background = getRarityGradient(tpl.base);
-    div.textContent = ${tpl.name} ×${qty};
-    collectionGrid.appendChild(div);
-  }
-}
-
-/* card visual generator (returns DOM element) */
-function makeCardElement(card, size='large'){
-  const el = document.createElement('div');
-  el.className = 'card ' + rarityClass(card.rarity.key);
-  el.style.width = size==='small' ? '96px' : '';
-  el.style.height = size==='small' ? '132px' : '';
-  // art area
-  const art = document.createElement('div');
-  art.className = 'art';
-  art.style.background = getRarityGradient(card.rarity.key);
-  art.innerHTML = `<div style="text-align:center">
-    <div style="font-size:${size==='small'?12:20}px">${card.name}</div>
-    <div style="font-size:${size==='small'?9:14}px;opacity:0.95;margin-top:8px">${card.subtitle || card.rarity.label}</div>
-  </div>`;
-  el.appendChild(art);
-  // meta
-  const meta = document.createElement('div');
-  meta.className = 'meta';
-  meta.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center">
-    <div style="font-weight:700">${card.name}</div>
-    <div class="rarity-badge" style="background:rgba(255,255,255,0.06)">${card.rarity.label}</div>
-  </div>
-  <div style="font-size:12px;margin-top:6px;opacity:0.9">${card.description}</div>`;
-  el.appendChild(meta);
-  if (card.specialGlint) {
-    const g = document.createElement('div'); g.className='glint'; el.appendChild(g);
-  }
-  // click to open modal
-  el.addEventListener('click',()=>{
-    showCardModal(card);
-  });
-  return el;
-}
-
-function rarityClass(key){
-  return {
-    common:'rarity-common',
-    rare:'rarity-rare',
-    epic:'rarity-epic',
-    legendary:'rarity-legendary'
-  }[key] || 'rarity-common';
-}
-
-function getRarityGradient(key){
-  switch(key){
-    case 'common': return 'linear-gradient(135deg, #e6e6e6, #d1d1d1)';
-    case 'rare': return 'linear-gradient(135deg,#7ec8ff,#5aa6ff)';
-    case 'epic': return 'linear-gradient(135deg,#c79eff,#9b73ff)';
-    case 'legendary': return 'linear-gradient(135deg,#ffd98f,#ffd166)';
-    default: return 'linear-gradient(135deg,#ddd,#bbb)';
-  }
-}
-
-function showCardModal(card){
-  modalTitle.textContent = card.name + ' • ' + card.rarity.label;
-  modalDesc.textContent = card.description;
-  modal.classList.add('open');
-}
-
-/* -----------------------------
-   Pack opening flow
-   ----------------------------- */
-const openPackBtn = document.getElementById('openPackBtn');
-const packDiv = document.getElementById('pack');
-const buyPackBtn = document.getElementById('buyPackBtn');
-const buy5Btn = document.getElementById('buy5Btn');
-const clearBtn = document.getElementById('clearBtn');
-
-packDiv.addEventListener('click', ()=> attemptOpenPack());
-openPackBtn.addEventListener('click', ()=> attemptOpenPack());
-buyPackBtn.addEventListener('click', ()=> buyPacks(1));
-buy5Btn.addEventListener('click', ()=> buyPacks(5));
-clearBtn.addEventListener('click', ()=> {
-  if (!confirm('Clear your collection and reset balance?')) return;
-  state.collection = {};
-  state.balance = 10;
-  saveState();
-});
-
-document.getElementById('closeModal').addEventListener('click', ()=> modal.classList.remove('open'));
-
-function buyPacks(n){
-  const cost = PACK_COST * n;
-  if (state.balance < cost){
-    alert('Not enough coins');
-    return;
-  }
-  state.balance -= cost;
-  saveState();
-  alert(Bought ${n} pack(s). Click "Open Pack" to open one (this demo lets you open one pack at a time).);
-}
-
-function attemptOpenPack(){
-  // pack opening requires a pack to be bought; simple rule: balance spent buys pack, but we let user open if they have non-zero balance spent as "packs available".
-  // For demo simplicity: opening consumes 1 pack-equivalent from balance if balance >= 0
-  // We'll allow opening only if balance is >= 0 and we simulate pack purchase separately.
-  // Simpler: require user to have at least 0 coins - but better: require they bought pack by paying earlier.
-  // To keep UX easy: If user has >=0 coins, let them open; but consume 0 here because buy triggers purchase. So require they "buy" first.
-  if (state.balance < 0) { alert('Buy a pack first'); return; }
-  // We'll simply run a pack open animation; the buy buttons deduct balance. If user hasn't bought, they can still open—so encourage them to buy.
-  runPackOpenSequence();
-}
-
-/* The core reveal: 5 cards, sequential reveal with small delay */
-async function runPackOpenSequence(){
-  // disable interactions
-  openPackBtn.disabled = true;
-  buyPackBtn.disabled = true;
-  buy5Btn.disabled = true;
-
-  // pack shake animation
-  packDiv.animate([
-    { transform:'scale(1) rotate(0deg)' },
-    { transform:'scale(1.05) rotate(2deg)' },
-    { transform:'scale(1) rotate(-2deg)' },
-    { transform:'scale(1.02) rotate(1deg)' },
-    { transform:'scale(1) rotate(0deg)' }
-  ], { duration:700, iterations:1, easing:'cubic-bezier(.2,.9,.3,1)' });
-
-  // reveal slot placeholders
-  revealContainer.innerHTML = '';
-  const slots = [];
-  for (let i=0;i<5;i++){
-    const slot = document.createElement('div');
-    slot.style.width = '220px';
-    slot.style.height = '320px';
-    slot.style.display='flex';
-    slot.style.alignItems='center';
-    slot.style.justifyContent='center';
-    slot.style.borderRadius='12px';
-    slot.style.background='rgba(255,255,255,0.02)';
-    slot.style.boxShadow='0 8px 20px rgba(0,0,0,0.32)';
-    slot.style.transform='scale(.😎';
-    revealContainer.appendChild(slot);
-    slots.push(slot);
-  }
-
-  // determine cards
-  const revealed = [];
-  for (let i=0;i<5;i++){
-    const r = pickRarity();
-    let template = pickCardByRarity(r.key);
-    // create card object
-    const card = {
-      instanceId: template.id + '-' + Date.now() + '-' + Math.floor(Math.random()*999),
-      id: template.id,
-      name: template.name,
-      description: template.description,
-      rarity: r,
-      subtitle: r.label,
-      specialGlint: (r.key === 'legendary' || (r.key==='epic' && Math.random()<0.1))
-    };
-    revealed.push(card);
-  }
-
-  // sequential reveal with timing
-  for (let i=0;i<revealed.length;i++){
-    await revealCardToSlot(revealed[i], slots[i], i);
-  }
-
-  // record to collection
-  for (const c of revealed){
-    state.collection[c.id] = (state.collection[c.id] || 0) + 1;
-  }
-  // show last reveal gallery
-  showLastReveal(revealed);
-
-  saveState();
-
-  // re-enable
-  openPackBtn.disabled = false;
-  buyPackBtn.disabled = false;
-  buy5Btn.disabled = false;
-}
-
-/* reveal one card animation into a slot */
-function revealCardToSlot(card, slotEl, index){
-  return new Promise(res=>{
-    // small delay per card
-    setTimeout(()=>{
-      slotEl.innerHTML = ''; // clear placeholder
-      slotEl.appendChild(makeCardElement(card));
-      slotEl.style.pointerEvents='auto';
-      // pop animation
-      slotEl.animate([
-        { transform:'scale(.6) translateY(20px)', opacity:0 },
-        { transform:'scale(1.06) translateY(-4px)', opacity:1 },
-        { transform:'scale(1) translateY(0)', opacity:1 }
-      ], { duration:520, easing:'cubic-bezier(.2,.9,.3,1)' });
-      // sparkle for rares+
-      if (card.rarity.weight >= 4){
-        const sparkle = document.createElement('div');
-        sparkle.style.position='absolute';
-        sparkle.style.width='260px'; sparkle.style.height='360px';
-        sparkle.style.left='-20px'; sparkle.style.top='-20px';
-        sparkle.style.pointerEvents='none';
-        sparkle.style.background = 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.45), rgba(255,255,255,0.05) 8%, transparent 20%), radial-gradient(circle at 70% 80%, rgba(255,255,255,0.22), transparent 20%)';
-        sparkle.style.mixBlendMode = 'screen';
-        slotEl.appendChild(sparkle);
-        sparkle.animate([{opacity:0},{opacity:1},{opacity:0}], {duration:800, easing:'ease-out'});
-        setTimeout(()=>sparkle.remove(),900);
+    function pickRarity() {
+      const r = Math.random();
+      let sum = 0;
+      for (const rar of rarities) {
+        sum += rar.chance;
+        if (r <= sum) return rar.key;
       }
-      res();
-    }, 280 * index);
-  });
-}
+      return "Common";
+    }
 
-/* show last reveal cards as smaller thumbnails (clickable) */
-function showLastReveal(cards){
-  lastReveal.innerHTML = '';
-  for (const c of cards){
-    const div = document.createElement('div');
-    div.style.cursor='pointer';
-    div.appendChild(makeCardElement(c,'small'));
-    div.addEventListener('click', ()=> showCardModal(c));
-    lastReveal.appendChild(div);
-  }
-}
+    function makeCard(id) {
+      const rarity = pickRarity();
+      return { id, rarity, revealed: false };
+    }
 
-/* -----------------------------
-   Init
-   ----------------------------- */
-function init(){
-  renderUI();
-  // ensure balance saved in localStorage
-  state.balance = Number(localStorage.getItem(CURRENCY_KEY) || state.balance);
-  // UI hint: buy initial pack
-  // (no auto opening)
-}
-init();
-</script>
+    function buyPack() {
+      if (credits < packCost) {
+        alert("Not enough credits!");
+        return;
+      }
+      credits -= packCost;
+      updateCredits();
+      cards = Array.from({ length: 5 }).map((_, i) => makeCard(i + 1));
+      revealedCount = 0;
+      renderCards();
+    }
+
+    function openPack() {
+      if (!cards.length) return alert("Buy a pack first!");
+      cards.forEach((card, idx) => {
+        setTimeout(() => {
+          card.revealed = true;
+          revealedCount++;
+          renderCards();
+        }, idx * 800);
+      });
+    }
+
+    function renderCards() {
+      const container = document.getElementById("cards");
+      container.innerHTML = "";
+      cards.forEach((card) => {
+        const div = document.createElement("div");
+        div.className = "card" + (card.revealed ? " revealed" : "");
+        div.innerHTML = `
+          <div class="card-inner">
+            <div class="card-back">Mystery Card</div>
+            <div class="card-front ${card.rarity === "Holo" ? "holo" : ""} ${card.rarity === "Rare" ? "rare" : ""}">
+              <div><strong>Card ${card.id}</strong></div>
+              <div>${card.rarity}</div>
+            </div>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    updateCredits();
+  </script>
 </body>
 </html>
